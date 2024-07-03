@@ -7,7 +7,7 @@ The ISS location/sighting data is determined by its TLE data from http://celestr
 ## Requirements
 ### Software
 #### Requirements
-- Raspberry Pi OS, e.g. Bookworm
+- Linux
 - Python3, pip3
 
 #### Installations
