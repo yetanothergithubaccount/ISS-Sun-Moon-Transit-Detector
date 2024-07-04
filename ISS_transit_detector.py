@@ -12,6 +12,7 @@ from skyfield.api import load, wgs84, N, W, EarthSatellite
 from pytz import timezone
 import ephem
 import optparse
+import sky_utils
 
 parser = optparse.OptionParser()
 
@@ -40,7 +41,6 @@ if options.debug:
   debug = options.debug
 else:
   debug = False
-verbose = False #True
 
 if options.latitude:
   latitude = float(options.latitude)
@@ -60,117 +60,7 @@ theDate = now.strftime("%d.%m.%Y")
 today = datetime.date.today()
 tomorrow = today + datetime.timedelta(days=2)
 
-
-def iss_now():
-  try:
-    """Get the ISS data from the tracking API"""
-    url = "http://api.open-notify.org/iss-now.json"
-    details = urllib.request.urlopen(url)
-    result = json.loads(details.read())
-    loc = result["iss_position"]
-    lat = loc["latitude"]
-    lon = loc["longitude"]
-    return lon,lat
-  except Exception as e:
-    print(str(e))
-    return 0,0
-
-def compass_direction(azimuth):
-  direction = ""
-  '''
-  N: 0
-  NE: 45
-  E: 90
-  ES: 135
-  S: 180
-  SW: 225
-  W: 270
-  WN: 315
-  '''
-  if azimuth >= 0 and azimuth < 15:
-    direction = "N"
-  if azimuth >= 15 and azimuth < 30:
-    direction = "NNE"
-  if azimuth >= 30 and azimuth < 60:
-    direction = "NE"
-  if azimuth >= 60 and azimuth < 75:
-    direction = "ENE"
-  if azimuth >= 75 and azimuth < 105:
-    direction = "E"
-  if azimuth >= 105 and azimuth < 135:
-    direction = "ESE"
-  if azimuth >= 135 and azimuth < 150:
-    direction = "SE"
-  if azimuth >= 150 and azimuth < 165:
-    direction = "SSE"
-  if azimuth >= 165 and azimuth < 195:
-    direction = "S"
-  if azimuth >= 195 and azimuth < 225:
-    direction = "SSW"
-  if azimuth >= 225 and azimuth < 240:
-    direction = "SW"
-  if azimuth >= 240 and azimuth < 255:
-    direction = "WSW"
-  if azimuth >= 255 and azimuth < 285:
-    direction = "W"
-  if azimuth >= 285 and azimuth < 300:
-    direction = "WNW"
-  if azimuth >= 300 and azimuth < 330:
-    direction = "NW"
-  if azimuth >= 330 and azimuth < 345:
-    direction = "NWN"
-  if azimuth >= 345 and azimuth <= 360:
-    direction = "N"
-  return direction
-
-def astro_night_times(theDate):
-  civil_night_start = None
-  civil_night_end = None
-  nautical_night_start = None
-  nautical_night_end = None
-  astronomical_night_start = None
-  astronomical_night_end = None
-
-  earth = ephem.Observer()
-  earth.lat = str(latitude)
-  earth.lon = str(longitude)
-  earth.date = datetime.datetime.strptime(theDate, "%d.%m.%Y")
-  sun = ephem.Sun()
-  sun.compute()
-
-  try:
-    earth.horizon = "0"
-    sunset = ephem.localtime(earth.next_setting(sun))
-    sunrise = ephem.localtime(earth.next_rising(sun))
-
-    earth.horizon = "-6"
-    civil_night_start = ephem.localtime(earth.next_setting(sun))
-    civil_night_end = ephem.localtime(earth.next_rising(sun))
-
-    earth.horizon = "-12"
-    nautical_night_start = ephem.localtime(earth.next_setting(sun))
-    nautical_night_end = ephem.localtime(earth.next_rising(sun))
-
-    earth.horizon = "-18"
-    astronomical_night_start = ephem.localtime(earth.next_setting(sun))
-    astronomical_night_end = ephem.localtime(earth.next_rising(sun))
-
-  # ephem throws an "AlwaysUpError" when there is no astronomical twilight (which occurs in summer in nordic countries)
-  except ephem.AlwaysUpError:
-    if debug:
-      print("No astronomical night at the moment: " + str(theDate))
-
-  if debug:
-    print("Civil night start: " + str(civil_night_start))
-    print("Civil night end: " + str(civil_night_end))
-    print("Nautical night start: " + str(nautical_night_start))
-    print("Nautical night end: " + str(nautical_night_end))
-    print("Astronomical night start: " + str(astronomical_night_start))
-    print("Astronomical night end: " + str(astronomical_night_end))
-
-  return civil_night_start, civil_night_end, nautical_night_start, nautical_night_end, astronomical_night_start, astronomical_night_end
-
-civil_night_start, civil_night_end, nautical_night_start, nautical_night_end, astronomical_night_start, astronomical_night_end  = astro_night_times(theDate)
+civil_night_start, civil_night_end, nautical_night_start, nautical_night_end, astronomical_night_start, astronomical_night_end  = sky_utils.astro_night_times(theDate, latitude, longitude, debug)
 
 def check_iss_sun_moon(iss, timestamp, limit, location):
   try:
@@ -183,18 +73,18 @@ def check_iss_sun_moon(iss, timestamp, limit, location):
     m = d.observe(moon).apparent()
     s = d.observe(sun).apparent()
     alt_sun, az_sun, distance_sun = s.altaz()
-    if verbose:
-      print("Sun position: " + str(alt_sun.degrees) + ", az: " + str(az_sun.degrees)) # + "( from " + str(latitude) + ", " + str(longitude) + ")")
+    #if debug:
+    #  print("Sun position: " + str(alt_sun.degrees) + ", az: " + str(az_sun.degrees)) # + "( from " + str(latitude) + ", " + str(longitude) + ")")
     alt_moon, az_moon, distance_moon = m.altaz()
-    if verbose:
-      print("Moon position: " + str(alt_moon.degrees) + ", az: " + str(az_moon.degrees)) # + "( from " + str(latitude) + ", " + str(longitude) + ")")
+    #if debug:
+    #  print("Moon position: " + str(alt_moon.degrees) + ", az: " + str(az_moon.degrees)) # + "( from " + str(latitude) + ", " + str(longitude) + ")")
     difference = iss - location
     topocentric = difference.at(t_sun)
     #print(topocentric.position.km)
     alt_iss, az_iss, distance = topocentric.altaz()
     #ra, dec, distance = topocentric.radec(epoch='date')
-    if verbose:
-      print("ISS position: " + str(alt_iss.degrees) + ", az: " + str(az_iss.degrees)) # + "( from " + str(latitude) + ", " + str(longitude) + ")")
+    #if debug:
+    #  print("ISS position: " + str(alt_iss.degrees) + ", az: " + str(az_iss.degrees)) # + "( from " + str(latitude) + ", " + str(longitude) + ")")
 
     #nauticalnighttimestart = timestamp.replace(hour=int(nautical_night_start.strftime("%H")), minute=int(nautical_night_start.strftime("%M")), second=0, microsecond=0)
     #nauticalnighttimeend = timestamp.replace(hour=int(nautical_night_end.strftime("%H")), minute=int(nautical_night_end.strftime("%M")), second=0, microsecond=0)
@@ -203,16 +93,16 @@ def check_iss_sun_moon(iss, timestamp, limit, location):
         
     # compare positions
     if alt_sun.degrees-limit < alt_iss.degrees < alt_sun.degrees+limit and az_sun.degrees-limit < az_iss.degrees < az_sun.degrees+limit:
-      msg = "** ISS transit alert: " + timestamp.strftime('%d.%m.%Y %H:%M:%S') + ": ISS might be in front of the sun in " + str(compass_direction(az_iss.degrees)) + " (ISS: " + str(round(alt_iss.degrees,2)) + ", " + str(round(az_iss.degrees,2)) + " / Sun: " + str(round(alt_sun.degrees,2)) + ", " + str(round(az_sun.degrees,2)) + ")**"
+      msg = "** ISS transit alert: " + timestamp.strftime('%d.%m.%Y %H:%M:%S') + ": ISS might be in front of the sun in " + str(sky_utils.compass_direction(az_iss.degrees)) + " (ISS: " + str(round(alt_iss.degrees,2)) + ", " + str(round(az_iss.degrees,2)) + " / Sun: " + str(round(alt_sun.degrees,2)) + ", " + str(round(az_sun.degrees,2)) + ")**"
       if debug:
         print(msg)
       return msg
     elif alt_moon.degrees-limit < alt_iss.degrees < alt_moon.degrees+limit and az_moon.degrees-limit < az_iss.degrees < az_moon.degrees+limit:
-      msg = "** ISS transit alert: " + timestamp.strftime('%d.%m.%Y %H:%M:%S') + ": ISS might be in front of the moon in " + str(compass_direction(az_iss.degrees)) + " (ISS: " + str(round(alt_iss.degrees,2)) + ", " + str(round(az_iss.degrees,2)) + " / Moon: " + str(round(alt_moon.degrees,2)) + ", " + str(round(az_moon.degrees,2)) + ")**"
+      msg = "** ISS transit alert: " + timestamp.strftime('%d.%m.%Y %H:%M:%S') + ": ISS might be in front of the moon in " + str(sky_utils.compass_direction(az_iss.degrees)) + " (ISS: " + str(round(alt_iss.degrees,2)) + ", " + str(round(az_iss.degrees,2)) + " / Moon: " + str(round(alt_moon.degrees,2)) + ", " + str(round(az_moon.degrees,2)) + ")**"
       print(msg)
       return msg
     else:
-      msg = "**" + timestamp.strftime('%d.%m.%Y %H:%M:%S') + ": ISS above " + str(iss_limit) + "° in " + str(compass_direction(az_iss.degrees)) + " (ISS: " + str(round(alt_iss.degrees,2)) + ", " + str(round(az_iss.degrees,2)) + ")**"
+      msg = "**" + timestamp.strftime('%d.%m.%Y %H:%M:%S') + ": ISS above " + str(iss_limit) + "° in " + str(sky_utils.compass_direction(az_iss.degrees)) + " (ISS: " + str(round(alt_iss.degrees,2)) + ", " + str(round(az_iss.degrees,2)) + ")**"
       if debug:
         print(msg)
       #SMArtHomeUtils().telegram_bot_sendtext(msg)
