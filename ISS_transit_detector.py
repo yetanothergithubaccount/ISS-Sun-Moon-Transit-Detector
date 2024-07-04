@@ -24,9 +24,12 @@ parser.add_option('-o', '--longitude',
 parser.add_option('-e', '--elevation',
     action="store", dest="elevation",
     help="elevation", default=144)
-parser.add_option('-l', '--limit',
-    action="store", dest="limit",
-    help="limit", default=20)
+parser.add_option('-l', '--iss_rise_limit',
+    action="store", dest="iss_rise_limit",
+    help="Min. altitude of ISS rise in degrees", default=20)
+parser.add_option('-r', '--range',
+    action="store", dest="range",
+    help="Range around observer location in degrees", default=0.3)
 parser.add_option('-d', '--debug',
     action="store_true", dest="debug",
     help="Enable debug output", default=False)
@@ -45,8 +48,10 @@ if options.longitude:
   longitude = float(options.longitude)
 if options.elevation:
   elevation = int(options.elevation)
-if options.limit:
-  iss_limit = int(options.limit)
+if options.iss_rise_limit:
+  iss_limit = int(options.iss_rise_limit)
+if options.range:
+  range_around_observer = float(options.range)
 
 europe = timezone('Europe/Berlin')
 
@@ -283,7 +288,7 @@ if __name__ == '__main__':
       print("")
       print("ISS rises/culminates/sets in sunlight:")
     for i in rise_above_30_in_sunlight:
-      transit_alarm = check_iss_sun_moon(iss, i, 0.3, location)
+      transit_alarm = check_iss_sun_moon(iss, i, range_around_observer, location)
       if transit_alarm:
         ISS_transits.append(transit_alarm)
     if ISS_transits:
