@@ -30,7 +30,7 @@ parser.add_option('-l', '--iss_rise_limit',
     help="Min. altitude of ISS rise in degrees", default=20)
 parser.add_option('-r', '--range',
     action="store", dest="range",
-    help="Range around observer location in degrees", default=0.3)
+    help="Range around observer location in degrees", default=0.03)
 parser.add_option('-d', '--debug',
     action="store_true", dest="debug",
     help="Enable debug output", default=False)
@@ -90,7 +90,8 @@ def check_iss_sun_moon(iss, timestamp, limit, location):
     #nauticalnighttimeend = timestamp.replace(hour=int(nautical_night_end.strftime("%H")), minute=int(nautical_night_end.strftime("%M")), second=0, microsecond=0)
     # consider night time
     #if nauticalnighttimestart <= timestamp  or timestamp <= nauticalnighttimeend:
-        
+
+    msg = ""
     # compare positions
     if alt_sun.degrees-limit < alt_iss.degrees < alt_sun.degrees+limit and az_sun.degrees-limit < az_iss.degrees < az_sun.degrees+limit:
       msg = "** ISS transit alert: " + timestamp.strftime('%d.%m.%Y %H:%M:%S') + ": ISS might be in front of the sun in " + str(sky_utils.compass_direction(az_iss.degrees)) + " (ISS: " + str(round(alt_iss.degrees,2)) + ", " + str(round(az_iss.degrees,2)) + " / Sun: " + str(round(alt_sun.degrees,2)) + ", " + str(round(az_sun.degrees,2)) + ")**"
@@ -105,7 +106,7 @@ def check_iss_sun_moon(iss, timestamp, limit, location):
       msg = "**" + timestamp.strftime('%d.%m.%Y %H:%M:%S') + ": ISS above " + str(iss_limit) + "° in " + str(sky_utils.compass_direction(az_iss.degrees)) + " (ISS: " + str(round(alt_iss.degrees,2)) + ", " + str(round(az_iss.degrees,2)) + ")**"
       if debug:
         print(msg)
-      #SMArtHomeUtils().telegram_bot_sendtext(msg)
+    return msg
   except Exception as e:
     print(str(e))
 
