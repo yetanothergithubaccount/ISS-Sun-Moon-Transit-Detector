@@ -86,8 +86,8 @@ def check_iss_sun_moon(iss, timestamp, limit, location):
     #if debug:
     #  print("ISS position: " + str(alt_iss.degrees) + ", az: " + str(az_iss.degrees)) # + "( from " + str(latitude) + ", " + str(longitude) + ")")
 
-    #nauticalnighttimestart = timestamp.replace(hour=int(nautical_night_start.strftime("%H")), minute=int(nautical_night_start.strftime("%M")), second=0, microsecond=0)
-    #nauticalnighttimeend = timestamp.replace(hour=int(nautical_night_end.strftime("%H")), minute=int(nautical_night_end.strftime("%M")), second=0, microsecond=0)
+    nauticalnighttimestart = timestamp.replace(hour=int(nautical_night_start.strftime("%H")), minute=int(nautical_night_start.strftime("%M")), second=0, microsecond=0)
+    nauticalnighttimeend = timestamp.replace(hour=int(nautical_night_end.strftime("%H")), minute=int(nautical_night_end.strftime("%M")), second=0, microsecond=0)
     # consider night time
     #if nauticalnighttimestart <= timestamp  or timestamp <= nauticalnighttimeend:
 
@@ -103,10 +103,15 @@ def check_iss_sun_moon(iss, timestamp, limit, location):
       print(msg)
       return msg
     else:
-      msg = "**" + timestamp.strftime('%d.%m.%Y %H:%M:%S') + ": ISS above " + str(iss_limit) + "° in " + str(sky_utils.compass_direction(az_iss.degrees)) + " (ISS: " + str(round(alt_iss.degrees,2)) + ", " + str(round(az_iss.degrees,2)) + ")**"
+      # consider all other ISS transits during nautical night only
+      if nauticalnighttimestart <= timestamp  or timestamp <= nauticalnighttimeend:
+        msg = "**" + timestamp.strftime('%d.%m.%Y %H:%M:%S') + ": ISS above " + str(iss_limit) + "° in " + str(sky_utils.compass_direction(az_iss.degrees)) + " (ISS: " + str(round(alt_iss.degrees,2)) + ", " + str(round(az_iss.degrees,2)) + ")**"
+    if len(msg)>0:
       if debug:
         print(msg)
-    return msg
+      return msg
+    else:
+      return None
   except Exception as e:
     print(str(e))
 
@@ -180,7 +185,7 @@ if __name__ == '__main__':
       print("ISS rises/culminates/sets in sunlight:")
     for i in rise_above_30_in_sunlight:
       transit_alarm = check_iss_sun_moon(iss, i, range_around_observer, location)
-      if transit_alarm:
+      if transit_alarm != None:
         ISS_transits.append(transit_alarm)
     if ISS_transits:
       print("ISS transits expected:")
