@@ -1,6 +1,6 @@
 # ISS Sun/Moon Transit Detector
 Simple ISS sun/moon transit detector. Makes use of the skyfield API to find out whether the ISS is visible in front of the sun or the moon from a specific location.
-The next days ISS sightings above the location are compared the the suns and the moons positions at that time. If there is a match a message is printed.
+The next days ISS sightings above the location are compared to the sun's and the moon's positions at that time. If there is a match a message is printed.
 The ISS location/sighting data is determined by its TLE data from http://celestrak.org/NORAD/elements/gp.php?INTDES=1998-067. This is time dependent and might change over time.
 
 
@@ -23,11 +23,11 @@ The ISS location/sighting data is determined by its TLE data from http://celestr
 ## Usage
 
 ```
-python3 ISS_transit_detector.py --latitude 50.0 --longitude 10.0 --elevation 100 --limit 35 --debug
+python3 ISS_transit_detector.py --latitude 50.0 --longitude 10.0 --elevation 100 --iss_rise_limit 35 --range 0.03 --debug
 ```
 
 ## Output
-The script output should be similar to if the debug option is used: 
+The script output should be similar to this if the debug option is used:
 ```
 ...
 ISS (ZARYA) catalog #25544 epoch 2024-07-03 04:53:42 UTC
@@ -47,5 +47,6 @@ ISS rises/culminates/sets in sunlight:
 ...
 **06.07.2024 01:28:27: ISS above 20° in E (ISS: -40.95, 92.46)**
 **06.07.2024 01:30:37: ISS above 20° in E (ISS: -45.23, 93.13)**
-
+...
+No ISS transits expected.
 ```
